@@ -5,13 +5,13 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch:  # اجازه اجرای دستی از تب Actions
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: 1️⃣ Checkout code (دریافت کدها)
+      - name: 1️⃣ Checkout code
         uses: actions/checkout@v4
 
       - name: 2️⃣ Set up JDK 17
@@ -20,31 +20,42 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 3️⃣ Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: 3️⃣ Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: 4️⃣ Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: 5️⃣ Create .env file (برای API Key)
+      - name: 5️⃣ Create .env file
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
-          cat .env  # فقط برای دیباگ (محتوا رو لاگ نمی‌کنه چون سکریت رو نشون نمیده)
+        run: echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
 
-      - name: 6️⃣ Fix build.gradle.kts (حذف خط مشکل‌ساز signingConfig)
-        run: |
-          # حذف خط حاوی 'signingConfig = signingConfigs.getByName("debugConfig")' از فایل build.gradle.kts
-          sed -i '/signingConfig = signingConfigs.getByName("debugConfig")/d' app/build.gradle.kts
+      - name: 6️⃣ Make gradlew executable
+        run: chmod +x gradlew || true
 
-      - name: 7️⃣ Build Debug APK
+      - name: 7️⃣ Generate Gradle Wrapper if missing
+        run: |
+          if [ ! -f gradlew ]; then
+            echo "⚙️ Generating Gradle Wrapper..."
+            gradle wrapper --gradle-version 8.0
+          fi
+
+      - name: 8️⃣ Fix build.gradle.kts
+        run: |
+          if grep -q 'signingConfig = signingConfigs.getByName("debugConfig")' app/build.gradle.kts; then
+            sed -i '/signingConfig = signingConfigs.getByName("debugConfig")/d' app/build.gradle.kts
+            echo "✅ Fixed build.gradle.kts"
+          else
+            echo "ℹ️ No fix needed"
+          fi
+
+      - name: 9️⃣ Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: 8️⃣ Upload APK as Artifact
+      - name: 🔟 Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
