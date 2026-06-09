@@ -1,8 +1,6 @@
-name: Build Simple APK
+name: Build APK - Manual
 
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -12,22 +10,43 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Setup JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      
-      - name: Create clean project structure
         run: |
-          # Clear everything and start fresh
+          sudo apt update
+          sudo apt install -y openjdk-17-jdk
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+      
+      - name: Download Android Command Line Tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools cmdline-tools-temp
+          mkdir cmdline-tools
+          mv cmdline-tools-temp cmdline-tools/latest
+          rm commandlinetools-linux-11076708_latest.zip
+      
+      - name: Accept all licenses automatically
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          
+          # Accept all licenses automatically
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1
+          
+          # Install required packages
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+      
+      - name: Create minimal project
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          
+          # Clean everything
           rm -rf app/build
-          rm -f app/build.gradle.kts
+          rm -f app/build.gradle
           rm -rf app/src
           
-          # Create minimal Android project
+          # Create project structure
           mkdir -p app/src/main/java/com/test/app
           mkdir -p app/src/main/res/values
           
@@ -36,49 +55,39 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.test.app">
-              
-              <application
-                  android:allowBackup="true"
-                  android:label="Test App"
-                  android:theme="@android:style/Theme.DeviceDefault">
-                  
-                  <activity android:name=".MainActivity"
-                      android:exported="true">
+              <application android:label="Test App">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
               </application>
           </manifest>
           EOF
           
-          # Create simple MainActivity.java (using Java instead of Kotlin to avoid Kotlin plugin)
+          # Create MainActivity.java
           cat > app/src/main/java/com/test/app/MainActivity.java << 'EOF'
           package com.test.app;
-          
           import android.app.Activity;
           import android.os.Bundle;
           import android.widget.TextView;
-          
           public class MainActivity extends Activity {
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   TextView tv = new TextView(this);
-                  tv.setText("Hello World!");
+                  tv.setText("Hello from GitHub Actions!");
                   setContentView(tv);
               }
           }
           EOF
           
-          # Create simple build.gradle (using Groovy instead of Kotlin DSL)
+          # Create build.gradle
           cat > app/build.gradle << 'EOF'
           apply plugin: 'com.android.application'
-          
           android {
               compileSdkVersion 34
-              
               defaultConfig {
                   applicationId "com.test.app"
                   minSdkVersion 21
@@ -86,17 +95,11 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
-              
               buildTypes {
-                  release {
-                      minifyEnabled false
-                  }
-                  debug {
-                      minifyEnabled false
-                  }
+                  release { minifyEnabled false }
+                  debug { minifyEnabled false }
               }
           }
-          
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
           }
@@ -104,46 +107,37 @@ jobs:
           
           # Create settings.gradle
           cat > settings.gradle << 'EOF'
-          rootProject.name = "MyApp"
+          rootProject.name = 'MyApp'
           include ':app'
           EOF
           
           # Create top-level build.gradle
           cat > build.gradle << 'EOF'
           buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:7.4.2'
-              }
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
           }
-          
           allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           EOF
           
+          # Create local.properties
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          
-          echo "✅ Clean project created"
+      
+      - name: Download and setup Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip
+          unzip -q gradle-8.0-bin.zip
+          echo "$(pwd)/gradle-8.0/bin" >> $GITHUB_PATH
       
       - name: Build APK
         run: |
-          # Download and use Gradle
-          wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip
-          unzip -q gradle-8.0-bin.zip
-          export PATH=$(pwd)/gradle-8.0/bin:$PATH
-          
-          # Build
+          export ANDROID_HOME=$HOME/android-sdk
           gradle assembleDebug --no-daemon
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: simple-app-debug
+          name: MyApp-debug
           path: app/build/outputs/apk/debug/*.apk
