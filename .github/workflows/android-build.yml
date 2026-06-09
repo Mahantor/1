@@ -1,4 +1,4 @@
-name: Build APK (Standalone)
+name: Build Simple APK
 
 on:
   push:
@@ -11,95 +11,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-java@v4
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
       
-      - uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
       
-      - name: Create minimal working build.gradle.kts
+      - name: Create clean project structure
         run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
-          echo "GEMINI_API_KEY=dummy_key" > .env
+          # Clear everything and start fresh
+          rm -rf app/build
+          rm -f app/build.gradle.kts
+          rm -rf app/src
           
-          # ساختن فایل build.gradle.kts ساده و مستقل
-          cat > app/build.gradle.kts << 'EOF'
-          plugins {
-              id("com.android.application")
-              id("org.jetbrains.kotlin.android")
-          }
+          # Create minimal Android project
+          mkdir -p app/src/main/java/com/test/app
+          mkdir -p app/src/main/res/values
           
-          android {
-              namespace = "com.example.app"
-              compileSdk = 34
-              
-              defaultConfig {
-                  applicationId = "com.example.app"
-                  minSdk = 24
-                  targetSdk = 34
-                  versionCode = 1
-                  versionName = "1.0"
-              }
-              
-              buildTypes {
-                  release {
-                      isMinifyEnabled = false
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-                  }
-                  debug {
-                      isMinifyEnabled = false
-                  }
-              }
-              
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_11
-                  targetCompatibility = JavaVersion.VERSION_11
-              }
-              
-              kotlinOptions {
-                  jvmTarget = "11"
-              }
-          }
-          
-          dependencies {
-              implementation("androidx.core:core-ktx:1.12.0")
-              implementation("androidx.appcompat:appcompat:1.6.1")
-              implementation("com.google.android.material:material:1.11.0")
-              implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-          }
-          EOF
-          
-          # ساختن یک MainActivity ساده برای اینکه بیلد بشه
-          mkdir -p app/src/main/java/com/example/app
-          cat > app/src/main/java/com/example/app/MainActivity.kt << 'EOF'
-          package com.example.app
-          
-          import android.os.Bundle
-          import androidx.appcompat.app.AppCompatActivity
-          
-          class MainActivity : AppCompatActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContentView(android.R.layout.activity_main)
-              }
-          }
-          EOF
-          
-          # ساختن AndroidManifest.xml ساده
-          mkdir -p app/src/main
+          # Create AndroidManifest.xml
           cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.example.app">
+              package="com.test.app">
               
               <application
                   android:allowBackup="true"
-                  android:icon="@android:drawable/ic_dialog_info"
                   android:label="Test App"
                   android:theme="@android:style/Theme.DeviceDefault">
-                  <activity
-                      android:name=".MainActivity"
+                  
+                  <activity android:name=".MainActivity"
                       android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -110,22 +53,97 @@ jobs:
           </manifest>
           EOF
           
-          # حذف فایل های resources که ممکنه مشکل دار باشن
-          rm -rf app/src/main/res 2>/dev/null || true
+          # Create simple MainActivity.java (using Java instead of Kotlin to avoid Kotlin plugin)
+          cat > app/src/main/java/com/test/app/MainActivity.java << 'EOF'
+          package com.test.app;
           
-          echo "✅ All files created"
-      
-      - name: Setup Gradle 9.3.1
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-9.3.1-bin.zip
-          unzip -q gradle-9.3.1-bin.zip
-          echo "$(pwd)/gradle-9.3.1/bin" >> $GITHUB_PATH
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+          
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView tv = new TextView(this);
+                  tv.setText("Hello World!");
+                  setContentView(tv);
+              }
+          }
+          EOF
+          
+          # Create simple build.gradle (using Groovy instead of Kotlin DSL)
+          cat > app/build.gradle << 'EOF'
+          apply plugin: 'com.android.application'
+          
+          android {
+              compileSdkVersion 34
+              
+              defaultConfig {
+                  applicationId "com.test.app"
+                  minSdkVersion 21
+                  targetSdkVersion 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+                  debug {
+                      minifyEnabled false
+                  }
+              }
+          }
+          
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+          }
+          EOF
+          
+          # Create settings.gradle
+          cat > settings.gradle << 'EOF'
+          rootProject.name = "MyApp"
+          include ':app'
+          EOF
+          
+          # Create top-level build.gradle
+          cat > build.gradle << 'EOF'
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:7.4.2'
+              }
+          }
+          
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+          
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          
+          echo "✅ Clean project created"
       
       - name: Build APK
-        run: gradle assembleDebug --no-daemon
+        run: |
+          # Download and use Gradle
+          wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip
+          unzip -q gradle-8.0-bin.zip
+          export PATH=$(pwd)/gradle-8.0/bin:$PATH
+          
+          # Build
+          gradle assembleDebug --no-daemon
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: simple-app-debug
           path: app/build/outputs/apk/debug/*.apk
