@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">USB Tether Toggle (Root)</string>
+    <string name="root_required">فقط روی گوشی روت شده کار میکند</string>
+    <string name="connect_usb">لطفاً کابل USB را وصل کن</string>
+</resources>

@@ -1,0 +1,6 @@
+{
+  "name": "USB Tether Toggle (Root)",
+  "description": "یک اپلیکیشن کاتلین برای فعال/غیرفعال کردن سریع USB Tethering در دستگاه‌های روت‌ شده (اندروید ۸ تا ۱۴)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

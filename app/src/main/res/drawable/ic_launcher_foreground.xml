@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sleek custom USB plug icon representing link & data connectivity -->
+    <group>
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M54,18 L54,42"
+            android:strokeWidth="4"
+            android:strokeColor="#10B981"
+            android:strokeLineCap="round" />
+        
+        <path
+            android:fillColor="#10B981"
+            android:pathData="M44,38 L64,38 L60,64 L48,64 Z" />
+
+        <path
+            android:fillColor="#34D399"
+            android:pathData="M48,64 L48,82 A6,6 0 0,0 60,82 L60,64 Z" />
+
+        <!-- Side branch to represent multiple connections/tethering of network -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M44,48 L32,48 C28,48 26,44 26,40 L26,30"
+            android:strokeWidth="3"
+            android:strokeColor="#34D399"
+            android:strokeLineCap="round" />
+
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M60,48 L72,48 C76,48 78,44 78,40 L78,30"
+            android:strokeWidth="3"
+            android:strokeColor="#34D399"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  activity_main.xml
+  طرح سنتی برای استفاده از TextView و Button جهت مدیریت تترینگ یواس‌بی
+  این طرح موازی با لایه Jetpack Compose برای استفاده کاربران سنتی ارائه شده است.
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:padding="24dp"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- هدر و عنوان برنامه -->
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="USB Tethering Toggle (Root)"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="32dp" />
+
+        <!-- نمایش وضعیت فعلی -->
+        <TextView
+            android:id="@+id/tv_status_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="وضعیت فعلی اتصال:"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="در حال بررسی..."
+            android:textColor="#FFC107"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="40dp" />
+
+        <!-- دکمه تغییر وضعیت -->
+        <Button
+            android:id="@+id/btn_toggle"
+            android:layout_width="200dp"
+            android:layout_height="60dp"
+            android:text="تغییر وضعیت"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:backgroundTint="#00E676"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- پیام روت و اتصال یواس‌بی -->
+        <TextView
+            android:id="@+id/tv_root_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="بررسی روت..."
+            android:textColor="#FF1744"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+    <!-- کپی‌رایت / راهنمای شل در پایین صفحه -->
+    <TextView
+        android:id="@+id/tv_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:text="دستورات شل مستقیماً با su اجرا می‌شوند"
+        android:textColor="#555555"
+        android:textSize="11sp" />
+
+</RelativeLayout>
